@@ -1,0 +1,16 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  install:
+    desc: Install remote-codecommit
+    cmds:
+      - mkdir -p dist
+      - go build -o ./dist/remote-codecommit main.go
+      - sudo cp -p dist/remote-codecommit /usr/local/bin/remote-codecommit
+
+  test:
+    desc: Go tests
+    cmds:
+      - go test ./... -v
