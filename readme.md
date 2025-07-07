@@ -10,3 +10,15 @@ So I let a model translate it to go.
 Tested for clone, pull, push.
 
 G.Glawe Juli 2025
+
+## Installation
+
+Copy the binary into a executable location.
+Git should automatically use it.
+
+With authenticated AWS credentials in a profile you can use:
+
+
+```bash
+git clone codecommit://demo-profile@MyRepositoryName
+```
