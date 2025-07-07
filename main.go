@@ -1,3 +1,4 @@
+// Oriinal Message from Python app:
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You
@@ -91,8 +92,8 @@ func (c *Context) FromURL(remoteURL string) error {
 			return FormatError{
 				Message: fmt.Sprintf("The following URL is malformed: %s. A URL must be in one of the two following formats: codecommit://<profile>@<repository> or codecommit::<region>://<profile>@<repository>", remoteURL),
 			}
-		}
-		
+}
+
 		// Parse the second part which should be "region://profile@repository"
 		secondPart := parts[1]
 		parsedURL, err := url.Parse(secondPart)
@@ -100,18 +101,18 @@ func (c *Context) FromURL(remoteURL string) error {
 			return FormatError{
 				Message: fmt.Sprintf("The following URL is malformed: %s. A URL must be in one of the two following formats: codecommit://<profile>@<repository> or codecommit::<region>://<profile>@<repository>", remoteURL),
 			}
-		}
-		
+}
+
 		if parsedURL.Scheme == "" || parsedURL.Host == "" {
 			return FormatError{
 				Message: fmt.Sprintf("The following URL is malformed: %s. A URL must be in one of the two following formats: codecommit://<profile>@<repository> or codecommit::<region>://<profile>@<repository>", remoteURL),
 			}
-		}
-		
+}
+
 		region := parsedURL.Scheme
 		profile := "default"
-		repository := parsedURL.Host
-		
+repository := parsedURL.Host
+
 		// Parse profile from URL - check User info first, then fallback to Host parsing
 		if parsedURL.User != nil {
 			profile = parsedURL.User.Username()
@@ -119,15 +120,15 @@ func (c *Context) FromURL(remoteURL string) error {
 			parts := strings.SplitN(parsedURL.Host, "@", 2)
 			profile = parts[0]
 			repository = parts[1]
-		}
-		
+}
+
 		// Validate region availability for CodeCommit
 		if !isRegionAvailable(region) {
 			return RegionNotAvailableError{
 				Message: fmt.Sprintf("The following AWS Region is not available for use with AWS CodeCommit: %s. For more information about CodeCommit's availability in AWS Regions, see the AWS CodeCommit User Guide.", region),
 			}
-		}
-		
+}
+
 		// Create AWS config
 		ctx := context.TODO()
 		cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile(profile), config.WithRegion(region))
@@ -135,25 +136,25 @@ func (c *Context) FromURL(remoteURL string) error {
 			return ProfileNotFoundError{
 				Message: fmt.Sprintf("The following profile was not found: %s. Either use an available profile, or create an AWS CLI profile to use and then try again. For more information, see Configure an AWS CLI Profile in the AWS CLI User Guide.", profile),
 			}
-		}
-		
+}
+
 		// Get credentials
 		creds, err := cfg.Credentials.Retrieve(ctx)
 		if err != nil {
 			return CredentialsNotFoundError{
 				Message: fmt.Sprintf("The following profile does not have credentials configured: %s. You must configure the access key and secret key for the profile. For more information, see Configure an AWS CLI Profile in the AWS CLI User Guide.", profile),
 			}
-		}
-		
+}
+
 		c.Config = cfg
 		c.Repository = repository
 		c.Version = "v1"
 		c.Region = region
-		c.Credentials = creds
-		
+c.Credentials = creds
+
 		return nil
-	}
-	
+}
+
 	// Handle the standard URL formats
 	parsedURL, err := url.Parse(remoteURL)
 	if err != nil {
@@ -244,14 +245,14 @@ func isRegionAvailable(region string) bool {
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	if err != nil {
 		return false
-	}
-	
+}
+
 	// Try to create a CodeCommit client to validate the region
 	client := codecommit.NewFromConfig(cfg)
 	if client == nil {
 		return false
-	}
-	
+}
+
 	// List of known CodeCommit regions (as of 2024)
 	knownRegions := map[string]bool{
 		"us-east-1":      true,
@@ -274,8 +275,8 @@ func isRegionAvailable(region string) bool {
 		"cn-northwest-1": true,
 		"us-gov-west-1":  true,
 		"us-gov-east-1":  true,
-	}
-	
+}
+
 	return knownRegions[region]
 }
 
@@ -312,23 +313,23 @@ var timeNow = time.Now
 
 // sign provides a SigV4 signature for a CodeCommit URL
 func sign(hostname, path, region string, creds aws.Credentials) string {
-	timestamp := timeNow().UTC().Format("20060102T150405")
-	
+timestamp := timeNow().UTC().Format("20060102T150405")
+
 	// Create canonical request
-	canonicalRequest := fmt.Sprintf("GIT\n%s\n\nhost:%s\n\nhost\n", path, hostname)
-	
+canonicalRequest := fmt.Sprintf("GIT\n%s\n\nhost:%s\n\nhost\n", path, hostname)
+
 	// Create string to sign
 	algorithm := "AWS4-HMAC-SHA256"
 	credentialScope := fmt.Sprintf("%s/%s/codecommit/aws4_request", timestamp[:8], region)
-	stringToSign := fmt.Sprintf("%s\n%s\n%s\n%s", algorithm, timestamp, credentialScope, hashSHA256(canonicalRequest))
-	
+stringToSign := fmt.Sprintf("%s\n%s\n%s\n%s", algorithm, timestamp, credentialScope, hashSHA256(canonicalRequest))
+
 	// Calculate signature
 	dateKey := hmacSHA256([]byte("AWS4"+creds.SecretAccessKey), timestamp[:8])
 	dateRegionKey := hmacSHA256(dateKey, region)
 	dateRegionServiceKey := hmacSHA256(dateRegionKey, "codecommit")
 	signingKey := hmacSHA256(dateRegionServiceKey, "aws4_request")
-	signature := hex.EncodeToString(hmacSHA256(signingKey, stringToSign))
-	
+signature := hex.EncodeToString(hmacSHA256(signingKey, stringToSign))
+
 	return fmt.Sprintf("%sZ%s", timestamp, signature)
 }
 
